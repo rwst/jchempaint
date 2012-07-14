@@ -43,9 +43,32 @@ import org.openscience.jchempaint.renderer.elements.TextElement;
 import org.openscience.jchempaint.renderer.elements.TextGroupElement;
 import org.openscience.jchempaint.renderer.elements.WedgeLineElement;
 import org.openscience.jchempaint.renderer.elements.WigglyLineElement;
+import org.openscience.jchempaint.renderer.font.FreeSansBoldGM;
 import org.openscience.jchempaint.renderer.font.IFontManager;
 
 /**
+ * We can only guarantee the same quality of SVG output everywhere
+ * by drawing paths and not using fonts. This is an indirect
+ * consequence of font commercialisation which has successfully
+ * prevented SVG fonts from becoming usable on all browsers.
+ * So, we convert an open font to SVG paths and use these.
+ * To resolve the problem of placement, we use bbox, advance and
+ * kerning values from the same font. 
+ * To make sure bonds don't cross text, we use two passes where
+ * text is drawn first and the bonds second.
+ * 
+ * The implementation includes a script to generate the needed values
+ * for each character as ready Java source, via batik-ttf2svg and
+ * freetype. This is necessary only once, or to extend the character
+ * range covered. The white patches consist of rectangles slightly
+ * larger than bbox. At the SVG side, the USE directive is employed
+ * to make the paths reusable.
+ * 
+ * Two-pass implementation (c) 2012 by
+ * @author Ralf Stephan <ralf@ark.in-berlin.de>
+ * @jcp.issue #2
+ * 
+ * First code layer (c) 2007 by
  * @author maclean
  * @cdk.module rendersvg
  * @cdk.bug 2403250
@@ -58,6 +81,8 @@ public class SVGGenerator implements IDrawVisitor {
      */
 	private RendererModel rendererModel;
 	
+	private FreeSansBoldGM the_font;
+	
 	public static final String HEADER = "<?xml version=\"1.0\"?>\n" +
 			"<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n" +
 			"\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n" +
@@ -69,7 +94,6 @@ public class SVGGenerator implements IDrawVisitor {
 	private AffineTransform transform;
 
 	public SVGGenerator() {
-		svg.append(SVGGenerator.HEADER);
 	}
 
 	private void newline() {
@@ -77,7 +101,8 @@ public class SVGGenerator implements IDrawVisitor {
 	}
 
 	public String getResult() {
-		newline();
+		svg.append(SVGGenerator.HEADER);
+		//finalize();
 		svg.append("</svg>");
 		return svg.toString();
 	}
@@ -288,7 +313,17 @@ public class SVGGenerator implements IDrawVisitor {
 	}
 	
 	public void visit(TextGroupElement textGroup) {
-		//TODO add code here
+		newline();
+		int bl = (int)(1.5*rendererModel.getBondLength());
+		int[] p = transformPoint(textGroup.x, textGroup.y);
+		svg.append(String.format(
+				"<text font-family=\"%s\" font-size=\"%dpx\" x=\"%s\" y=\"%s\">%s</text>",
+				rendererModel.getFontName(),
+				bl,
+				p[0]-bl/2,
+				p[1]+bl/2,
+				textGroup.text
+				));		
 	}
 	
     public void visit(ArrowElement line) {
@@ -401,7 +436,6 @@ public class SVGGenerator implements IDrawVisitor {
 	}
 
     public void setFontManager(IFontManager fontManager) {
-        // FIXME : what kind of font management does SVG really need?
     }
 
     public void setRendererModel(RendererModel rendererModel) {
