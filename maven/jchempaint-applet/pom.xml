@@ -2,14 +2,14 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.openscience.cdk</groupId>
+    <groupId>org.openscience.jchempaint</groupId>
     <artifactId>jchempaint-all</artifactId>
-    <version>3.3-1206</version>
+    <version>3.3</version>
   </parent>
-  <groupId>org.openscience.cdk</groupId>
+  <groupId>org.openscience.jchempaint</groupId>
   <artifactId>jchempaint-applet</artifactId>
   <packaging>jar</packaging>
-  <name>jchempaint-applet</name>
+  <name>JChemPaint applet</name>
   <description>JChemPaint applet</description>
  <url>http://http://jchempaint.github.com</url>
  <build>
